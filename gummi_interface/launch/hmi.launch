@@ -1,9 +1,7 @@
-<launch>	
-  <arg name="clone" default="default"/>	
-  <include file="$(find gummi_interface)/launch/load_config.launch" ns="hmi">
+<launch>
+  <arg name="clone" default="default"/>
+  <!-- <include file="$(find gummi_interface)/launch/load_config.launch" ns="hmi">
     <arg name="clone" value="$(arg clone)"/>
-  </include>
-  <node name="hmi" pkg="gummi_interface" type="hmi.py" output="screen"/>	
+  </include> -->
+  <node name="hmi" pkg="gummi_interface" type="hmi.py" output="screen"/>
 </launch>
-
-

@@ -1,3 +1,6 @@
-*.stl
-*.step
-*.FCStd1
+.catkin_workspace
+.DS_Store
+*.pyc
+build/
+devel/
+dynamixel_motor/

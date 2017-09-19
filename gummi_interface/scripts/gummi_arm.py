@@ -10,15 +10,18 @@ from gummi_interface.gummi import Gummi
 
 def main(args):
 
-    rospy.init_node('GummiArm', anonymous=True)
-    r = rospy.Rate(60)  
+    rospy.init_node('GummiArm', anonymous=False)
+    # anonymous=False because doesn't look like a good idea two GummiArm nodes...
+    r = rospy.Rate(60)
+    # Tried 100 and rostopic hz said it was working!
+    # With 600 the elbow PID controller went crazy!
 
     gummi = Gummi()
 
-    print('WARNING: Moving joints sequentially to equilibrium positions.')
+    rospy.logwarn('Moving joints sequentially to equilibrium positions.')
     gummi.doGradualStartup()
-    
-    print('WARNING: Moving to resting pose, hold arm!')
+
+    rospy.logwarn('Moving to resting pose, hold arm!')
     rospy.sleep(1)
 
     gummi.goRestingPose(True)
@@ -30,15 +33,22 @@ def main(args):
     #    gummi.forearmRoll.servoTo(pi/2)
     #    r.sleep()
 
-    gummi.setCollisionResponses(False, False, False, False, False)
-    print("GummiArm is live!")
+    gummi.setCollisionResponses(shoulder_yaw=False, shoulder_roll=False, shoulder_pitch=False, elbow=False)
+    rospy.loginfo("GummiArm is live!")
 
     while not rospy.is_shutdown():
-        if gummi.teleop == 0:
-            gummi.doUpdate()
+        try:
+            rospy.has_param("/dynamixel_manager_arm/namespace")
+            # rospy.has_param("/dynamixel_manager_arm/namespace") is a way to verify if the manager is running
 
-        gummi.publishJointState()
-        r.sleep()
-  
+            if gummi.teleop == 0 and gummi.velocity_control == 0:
+                gummi.doUpdate()
+
+            gummi.publishJointState()
+            r.sleep()
+        except:
+            rospy.signal_shutdown("gummi_dynamixel manager seems to be dead... exiting!")
+
+
 if __name__ == '__main__':
     main(sys.argv)

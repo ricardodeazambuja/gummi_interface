@@ -8,13 +8,19 @@ from joint_angle import JointAngle
 from dynamixel_controllers.srv import SetTorqueLimit
 
 class DirectDrive:
-    def __init__(self, name, servoRange):
+    def __init__(self, name, servoRange=None):
         self.name = name
-        self.servoRange = servoRange
         self.initPublishers()
         self.initVariables()
 
-        self.angle = JointAngle(name, 1, -servoRange/2, servoRange/2, False)
+        if servoRange:
+            minRange = -servoRange/2
+            maxRange = servoRange/2
+        else:
+            minRange = rospy.get_param("~" + name + "/minAngle")
+            maxRange = rospy.get_param("~" + name + "/maxAngle")
+
+        self.angle = JointAngle(name, 1, minRange, maxRange, False)
 
     def initPublishers(self):
         self.pub = rospy.Publisher(self.name + '_controller/command', Float64, queue_size=5)
@@ -29,7 +35,7 @@ class DirectDrive:
         self.noCommandYet = False
         self.doUpdate()
 
-    def servoWith(self, dVelocity):
+    def servoWith(self, dVelocity, dCocontraction=None):
         self.velocity = True
         self.angle.setDesiredVelocity(dVelocity)
         self.noCommandYet = False
@@ -42,14 +48,17 @@ class DirectDrive:
     def doUpdate(self):
         if self.velocity:
             self.angle.doVelocityIncrement()
-            
+
         if self.noCommandYet:
             self.angle.setDesired(self.encoderAngle)
-            
+
         self.publishCommand()
 
     def getJointAngle(self):
         return self.angle.getEncoder()
+
+    def getJointVelocity(self):
+        return self.angle.getEncoderVelocity()
 
     def setTorqueLimit(self, limit):
         service_name = self.name + "_controller/set_torque_limit"

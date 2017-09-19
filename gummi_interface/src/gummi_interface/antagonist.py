@@ -79,7 +79,7 @@ class Antagonist:
             te = rospy.ServiceProxy(service_name, TorqueEnable)
             te(torque_enable = False)
         except rospy.ServiceException, e:
-            print "Service call failed: %s"%e
+            rospy.logwarn("Service call failed: {}".format(e))
 
     def initPublishers(self):
         self.pubDiagnostics = rospy.Publisher(self.name + "/diagnostics", Diagnostics, queue_size=5)
@@ -89,13 +89,13 @@ class Antagonist:
             self.velocity = False
             self.closedLoop = True
             self.feedForward = False
-            self.eqModel.dCocontraction = dCocontraction  
+            self.eqModel.dCocontraction = dCocontraction
             self.angle.setDesired(dAngle)
             self.cocontractionReflex.clear()
             self.cocontractionReflex.setBaseContribution(dCocontraction)
             self.doUpdate()
         else:
-            print("Warning: Joint " + self.name + " not listed as calibrated in .yaml config file. Ignoring servoTo() command.")
+            rospy.logwarn("Warning: Joint " + self.name + " not listed as calibrated in .yaml config file. Ignoring servoTo() command.")
 
     def goTo(self, dAngle, dStartCocontraction, now):
         if self.calibrated is 1:
@@ -114,7 +114,7 @@ class Antagonist:
             self.inverseModel.setAngle(aim)
             self.doUpdate()
         else:
-            print("Warning: Joint " + self.name + " not listed as calibrated in .yaml config file. Ignoring goTest() command.")
+            rospy.logwarn("Warning: Joint " + self.name + " not listed as calibrated in .yaml config file. Ignoring goTest() command.")
 
     def moveTo(self, dEquilibrium, dCocontraction):
         self.velocity = False
@@ -144,7 +144,7 @@ class Antagonist:
         self.feedForward = False
         self.angle.setDesiredVelocity(dVelocity * self.signJoint)
         self.angle.doVelocityIncrement()
-        self.eqModel.dCocontraction = dCocontraction  
+        self.eqModel.dCocontraction = dCocontraction
         self.cocontractionReflex.clear()
         self.cocontractionReflex.setBaseContribution(dCocontraction)
         self.feedbackReflex.removeExcitation()
@@ -165,7 +165,7 @@ class Antagonist:
         delay = currentTime - msgTime
 
         if delay.to_sec() > 0.25:
-            print("Warning: Delay of message larger than 0.25 seconds for encoder " + self.nameEncoder + ", stopping.")
+            rospy.logwarn("Warning: Delay of message larger than 0.25 seconds for encoder " + self.nameEncoder + ", stopping.")
         else:
             if self.angle.isBeyondMin() or self.angle.isBeyondMax():
                 self.collisionReflex.removeExcitation()
@@ -177,7 +177,7 @@ class Antagonist:
 
                     if self.isOverloaded():
                         self.collisionReflex.updateExcitation(1.0)
-                        
+
                     if self.collisionReflex.getContribution() > 0.5:
                         if self.collisionReflex.getContribution() > 0.9:
                             self.inverseModelCollision.setCocontraction(self.eqModel.getCocontractionForAlphas())
@@ -201,7 +201,7 @@ class Antagonist:
 
     def doUpdateWhenCollision(self):
         if not self.inverseModelCollision.generateOk():
-            print("Warning: Outside ballistic calibration data for joint " + self.name + ", not using model-based collision reaction.")
+            rospy.logwarn("Warning: Outside ballistic calibration data for joint " + self.name + ", not using model-based collision reaction.")
             self.collisionReflex.removeExcitation()
         else:
             self.feedbackReflex.removeExcitation()
@@ -215,30 +215,30 @@ class Antagonist:
                 self.feedbackReflex.doDiscount()
                 if self.isFeedbackDue():
                     self.feedbackReflex.removeExcitation()
-                    
+
                 self.cocontractionReflex.doDiscount()
                 cocontReflex = self.cocontractionReflex.getContribution()
                 sumCocontraction = cocontReflex
                 if sumCocontraction > self.eqModel.maxCocontraction:
                     sumCocontraction = self.eqModel.maxCocontraction
-                    
+
                 self.inverseModel.setCocontraction(sumCocontraction)
                 self.eqModel.cCocontraction = sumCocontraction
-                
+
                 if self.feedForward:
                     if not self.inverseModel.generateOk():
-                        print("Warning: Outside ballistic calibration data for joint " + self.name + ", not using model-based feedforward.")
+                        rospy.logwarn("Warning: Outside ballistic calibration data for joint " + self.name + ", not using model-based feedforward.")
                     else:
                         self.eqModel.dEquilibrium = self.inverseModel.getEquilibriumPoint()
                     self.ballistic = 1
                     self.feedForward = False
-                    
+
         self.generateError()
 
         if self.closedLoop:
             if self.feedbackReflex.getContribution() < 0.5:
                 self.ballistic = 0
-                self.doClosedLoop()      
+                self.doClosedLoop()
                 self.eqModel.dEquilibrium = self.eqModel.dEquilibrium + self.deltaEqFeedback
 
     def generateForwardError(self):
@@ -247,7 +247,7 @@ class Antagonist:
         self.forwardModel.setEquilibrium(equivalentEq)
         self.forwardModel.setCocontraction(equivalentCc)
         if not self.forwardModel.generateOk():
-            print("Warning: Outside load calibration data for joint " + self.name + ", not estimating load.")
+            rospy.logwarn("Warning: Outside load calibration data for joint " + self.name + ", not estimating load.")
             self.forwardError = 0.0
             self.lastForwardError = 0.0
             return False
@@ -261,7 +261,7 @@ class Antagonist:
         absolute = abs(self.forwardError)
         rate = absolute - abs(self.lastForwardError)
         if  (absolute > self.maxAbsForwardError) or (absolute > self.maxAbsForwardError/3.0 and rate > 0.15):
-            print("Warning: Overloading joint " + self.name + ", absolute forward error: " + str(round(absolute,2)) + ", rate: " + str(round(rate,4)) + ".")
+            rospy.logwarn("Warning: Overloading joint " + self.name + ", absolute forward error: " + str(round(absolute,2)) + ", rate: " + str(round(rate,4)) + ".")
             return True
         else:
             return False
@@ -281,7 +281,7 @@ class Antagonist:
     def generateError(self):
         encoderAngle = self.angle.getEncoder()
         dAngle = self.angle.getDesired()
-        
+
         error = dAngle - encoderAngle
 
         self.errors.appendleft(error)
@@ -293,7 +293,7 @@ class Antagonist:
 
         errorChange = self.errorLast - error
         self.errorLast = error
-        
+
         prop_term = error * self.pGain
         vel_term = errorChange * self.vGain
         int_term = np.sum(self.errors) * self.iGain
@@ -313,6 +313,9 @@ class Antagonist:
 
     def getJointAngle(self):
         return self.angle.getEncoder()
+
+    def getJointVelocity(self):
+        return self.angle.getEncoderVelocity()
 
     def getName(self):
         return self.name
