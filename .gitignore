@@ -1,5 +1,6 @@
 .catkin_workspace
 .DS_Store
+.vscode
 *.pyc
 build/
 devel/
