@@ -180,20 +180,21 @@ class Gummi:
 
     # This function is not used anywhere here...
     def goTo(self, positions, now):
-        if self.teleop == 0:
-            self.shoulderYaw.goTo(positions[0], self.shoulderYawCocont, now)
-            self.shoulderRoll.goTo(positions[1], self.shoulderRollCocont, now)
-            self.shoulderPitch.goTo(positions[2], self.shoulderPitchCocont, now)
-
-            self.upperarmRoll.servoTo(positions[3])
-
-            self.elbow.goTo(positions[4], self.elbowCocont, now)
-            self.forearmRoll.servoTo(positions[5])
-            self.wrist.servoTo(positions[6])
-            # self.wrist.goTo(positions[6], self.wristCocont, now)
-            self.gripper.servoTo(positions[7])
-            # self.handDOF1.servoTo(positions[7])
-
-            self.publishJointState()
-        else:
-            rospy.logwarn("Asked to go to pose, but ignoring as in teleop mode. Check gummi.yaml file.")
+        rospy.logerr("This function is deprecated. Check documentation!")
+        # if self.teleop == 0:
+        #     self.shoulderYaw.goTo(positions[0], self.shoulderYawCocont, now)
+        #     self.shoulderRoll.goTo(positions[1], self.shoulderRollCocont, now)
+        #     self.shoulderPitch.goTo(positions[2], self.shoulderPitchCocont, now)
+        #
+        #     self.upperarmRoll.servoTo(positions[3])
+        #
+        #     self.elbow.goTo(positions[4], self.elbowCocont, now)
+        #     self.forearmRoll.servoTo(positions[5])
+        #     self.wrist.servoTo(positions[6])
+        #     # self.wrist.goTo(positions[6], self.wristCocont, now)
+        #     self.gripper.servoTo(positions[7])
+        #     # self.handDOF1.servoTo(positions[7])
+        #
+        #     self.publishJointState()
+        # else:
+        #     rospy.logwarn("Asked to go to pose, but ignoring as in teleop mode. Check gummi.yaml file.")
